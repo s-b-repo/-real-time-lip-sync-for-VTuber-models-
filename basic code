@@ -1,0 +1,55 @@
+// Setup Web Audio API
+var audioContext = new AudioContext();
+var gainNode = audioContext.createGain();
+gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+gainNode.connect(audioContext.destination);
+
+// Setup Web Socket
+var socket = new WebSocket("ws://localhost:8080");
+socket.onopen = function(event) {
+  console.log("WebSocket connected.");
+};
+socket.onclose = function(event) {
+  console.log("WebSocket closed.");
+};
+socket.onmessage = function(event) {
+  // Get TTS text from message
+  var text = event.data;
+
+  // Create SpeechSynthesisUtterance object and set text
+  var utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+  
+  // Pass utterance to speech synthesis and play audio
+  speechSynthesis.speak(utterance);
+  var source = audioContext.createMediaStreamSource(utterance);
+  source.connect(gainNode);
+};
+
+// Setup mouth animation based on audio level
+function animateMouth(level) {
+  // Use level to adjust mouth shape
+  // ...
+  // ...
+}
+
+// Analyze audio stream and update mouth animation
+navigator.mediaDevices.getUserMedia({ audio: true })
+  .then(function(stream) {
+    var analyzer = audioContext.createAnalyser();
+    var source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyzer);
+    analyzer.fftSize = 2048;
+
+    var bufferLength = analyzer.frequencyBinCount;
+    var dataArray = new Uint8Array(bufferLength);
+
+    function update() {
+      analyzer.getByteFrequencyData(dataArray);
+      var level = dataArray[0];
+      animateMouth(level);
+      requestAnimationFrame(update);
+    }
+
+    update();
+  });
